@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
 import { SalesGrid, type SalesRecord } from '@/components/grid/SalesGrid'
 import { ExcelUpload } from '@/components/grid/ExcelUpload'
 import { ManualInput } from '@/components/grid/ManualInput'
@@ -23,33 +22,31 @@ export default function GridPage() {
     if (selectedRows.length === 0) return
     setCalendarStatus('등록 중...')
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.provider_token
-      if (!token) {
-        setCalendarStatus('Google 로그인 필요')
+      const events = selectedRows.map((row) => ({
+        summary: `[정산] ${row.product_name}`,
+        description: `판매가: ${row.sale_price.toLocaleString()}원 | 마진: ${row.margin.toLocaleString()}원`,
+        date: row.settlement_due_at ?? row.sold_at,
+      }))
+
+      const res = await fetch('/api/calendar/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events }),
+      })
+
+      const result = await res.json()
+
+      if (!res.ok) {
+        if (result.error === 'NO_GOOGLE_TOKEN' || result.error === 'TOKEN_REFRESH_FAILED') {
+          setCalendarStatus('Google 재로그인 필요')
+        } else {
+          setCalendarStatus('등록 실패')
+        }
         return
       }
 
-      const results = await Promise.allSettled(
-        selectedRows.map((row) => {
-          const date = row.settlement_due_at ?? row.sold_at
-          return fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              summary: `[정산] ${row.product_name}`,
-              description: `판매가: ${row.sale_price.toLocaleString()}원 | 마진: ${row.margin.toLocaleString()}원`,
-              start: { date },
-              end: { date },
-            }),
-          })
-        })
-      )
-      const succeeded = results.filter((r) => r.status === 'fulfilled').length
-      setCalendarStatus(`${succeeded}건 등록 완료`)
+      setCalendarStatus(`${result.succeeded}건 등록 완료`)
+      window.open('https://calendar.google.com', '_blank')
     } catch {
       setCalendarStatus('등록 실패')
     }
@@ -57,34 +54,42 @@ export default function GridPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-start justify-between">
-        <h1 className="text-2xl font-bold">판매 데이터</h1>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
+    <div className="flex flex-col h-full">
+      <div className="shrink-0 px-8 pt-8 pb-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight mb-2">판매 데이터</h2>
+            <p className="text-muted-foreground text-base">리셀러 판매 기록을 조회하고 관리하는 화면입니다.</p>
+          </div>
+          <div className="flex items-center gap-3">
             {calendarStatus && (
-              <span className="text-xs text-muted-foreground">{calendarStatus}</span>
+              <span className="text-sm text-muted-foreground font-medium">{calendarStatus}</span>
             )}
             <Button
               variant="outline"
-              size="sm"
+              className="font-bold flex items-center gap-2 shadow-sm hover:bg-lavender"
               onClick={handleCalendar}
               disabled={selectedRows.length === 0}
             >
-              📅 캘린더 등록{selectedRows.length > 0 ? ` (${selectedRows.length}건)` : ''}
+              <span className="material-symbols-outlined text-xl">calendar_month</span>
+              구글 캘린더{selectedRows.length > 0 ? ` (${selectedRows.length}건)` : ''}
             </Button>
-          </div>
-          <div className="flex gap-2">
-            <ManualInput />
-            <ExcelUpload />
           </div>
         </div>
       </div>
-      <SalesGrid
-        initialChannel={channelFilter}
-        initialDate={dateFilter}
-        onSelectionChange={handleSelectionChange}
-      />
+      <div className="flex-1 min-h-0 px-8 pb-0">
+        <SalesGrid
+          initialChannel={channelFilter}
+          initialDate={dateFilter}
+          onSelectionChange={handleSelectionChange}
+          actionButtons={
+            <>
+              <ManualInput />
+              <ExcelUpload />
+            </>
+          }
+        />
+      </div>
     </div>
   )
 }

@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
   createColumnHelper,
   type SortingState,
@@ -90,18 +89,25 @@ export function SalesGrid({
   initialChannel = '',
   initialDate = '',
   onSelectionChange,
+  actionButtons,
 }: {
   initialChannel?: string
   initialDate?: string
   onSelectionChange?: (rows: SalesRecord[]) => void
+  actionButtons?: ReactNode
 } = {}) {
   const { plan, rowCount, ROW_LIMIT } = usePlanInfo()
   const [data, setData] = useState<SalesRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = useState(initialChannel || initialDate || '')
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [filterProductName, setFilterProductName] = useState('')
+  const [filterMarketplace, setFilterMarketplace] = useState(initialChannel || '')
+  const [filterDateFrom, setFilterDateFrom] = useState(initialDate || '')
+  const [filterDateTo, setFilterDateTo] = useState('')
+  const [filterPriceMin, setFilterPriceMin] = useState('')
+  const [filterPriceMax, setFilterPriceMax] = useState('')
   const [pendingChanges, setPendingChanges] = useState<Map<string, Partial<SalesRecord>>>(new Map())
   const [deleting, setDeleting] = useState(false)
 
@@ -214,11 +220,11 @@ export function SalesGrid({
     // 행 번호
     columnHelper.display({
       id: 'rownum',
-      header: '순  번',
+      header: '\u{C21C}  \u{BC88}',
       cell: ({ row }) => <span className="text-muted-foreground text-center block">{row.index + 1}</span>,
     }),
     columnHelper.accessor('product_name', {
-      header: '상  품  명',
+      header: '\u{C0C1}  \u{D488}  \u{BA85}',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -230,15 +236,15 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('marketplace', {
-      header: '판  매  처',
+      header: '\u{D310}  \u{B9E4}  \u{CC98}',
       cell: (info) => <span className="block text-left">{info.getValue() ?? '-'}</span>,
     }),
     columnHelper.accessor('sold_at', {
-      header: '판  매  일',
+      header: '\u{D310}  \u{B9E4}  \u{C77C}',
       cell: (info) => <span className="block text-center">{info.getValue()}</span>,
     }),
     columnHelper.accessor('sale_price', {
-      header: '판  매  가',
+      header: '\u{D310}  \u{B9E4}  \u{AC00}',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -249,7 +255,7 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('quantity', {
-      header: '수  량',
+      header: '\u{C218}  \u{B7C9}',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -260,7 +266,7 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('unit_cost', {
-      header: '원  가',
+      header: '\u{C6D0}  \u{AC00}',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -271,7 +277,7 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('fee_1', {
-      header: '수  수  료  1',
+      header: '\u{C218}  \u{C218}  \u{B8CC}  1',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -282,7 +288,7 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('fee_2', {
-      header: '수  수  료  2',
+      header: '\u{C218}  \u{C218}  \u{B8CC}  2',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -293,7 +299,7 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('fee_3', {
-      header: '수  수  료  3',
+      header: '\u{C218}  \u{C218}  \u{B8CC}  3',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -304,7 +310,7 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('ad_cost', {
-      header: '광  고  비',
+      header: '\u{AD11}  \u{ACE0}  \u{BE44}',
       cell: (info) => (
         <EditableCell
           value={info.getValue()}
@@ -315,11 +321,11 @@ export function SalesGrid({
       ),
     }),
     columnHelper.accessor('gross_sales', {
-      header: '매  출',
+      header: '\u{B9E4}  \u{CD9C}',
       cell: (info) => <span className="block text-right">{fmt(info.getValue())}</span>,
     }),
     columnHelper.accessor('margin', {
-      header: '마  진',
+      header: '\u{B9C8}  \u{C9C4}',
       cell: (info) => (
         <span className={`block text-right ${info.getValue() < 0 ? 'text-destructive' : ''}`}>
           {fmt(info.getValue())}
@@ -328,16 +334,26 @@ export function SalesGrid({
     }),
   ]
 
+  const filteredData = useMemo(() => {
+    return data.filter((row) => {
+      if (filterProductName && !row.product_name.toLowerCase().includes(filterProductName.toLowerCase())) return false
+      if (filterMarketplace && !(row.marketplace ?? '').toLowerCase().includes(filterMarketplace.toLowerCase())) return false
+      if (filterDateFrom && row.sold_at < filterDateFrom) return false
+      if (filterDateTo && row.sold_at > filterDateTo) return false
+      if (filterPriceMin && row.sale_price < Number(filterPriceMin)) return false
+      if (filterPriceMax && row.sale_price > Number(filterPriceMax)) return false
+      return true
+    })
+  }, [data, filterProductName, filterMarketplace, filterDateFrom, filterDateTo, filterPriceMin, filterPriceMax])
+
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
-    state: { sorting, globalFilter, rowSelection },
+    state: { sorting, rowSelection },
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     enableRowSelection: true,
   })
 
@@ -346,7 +362,7 @@ export function SalesGrid({
   }, [rowSelection])
 
   // 합계 계산
-  const filteredRows = table.getFilteredRowModel().rows
+  const filteredRows = table.getRowModel().rows
   const totalQty = filteredRows.reduce((s, r) => s + r.original.quantity, 0)
   const totalUnitCost = filteredRows.reduce((s, r) => s + r.original.unit_cost, 0)
   const totalFee1 = filteredRows.reduce((s, r) => s + r.original.fee_1, 0)
@@ -357,51 +373,105 @@ export function SalesGrid({
   const totalMargin = filteredRows.reduce((s, r) => s + r.original.margin, 0)
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">불러오는 중...</div>
+    return <div className="flex items-center justify-center h-64 text-muted-foreground">{'\u{BD88}\u{B7EC}\u{C624}\u{B294} \u{C911}...'}</div>
   }
 
   const isNearLimit = plan === 'free' && rowCount >= ROW_LIMIT * 0.9
   const isAtLimit = plan === 'free' && rowCount >= ROW_LIMIT
 
+  const selectedCount = Object.keys(rowSelection).length
+
+  const handleReset = () => {
+    setFilterProductName('')
+    setFilterMarketplace('')
+    setFilterDateFrom('')
+    setFilterDateTo('')
+    setFilterPriceMin('')
+    setFilterPriceMax('')
+  }
+
   return (
-    <div className="space-y-4">
-      {isAtLimit && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-          데이터 한도(1,000행)에 도달했습니다. 새 데이터를 추가하려면 Pro로 업그레이드하세요.
+    <div className="flex flex-col h-full min-h-0">
+      {/* 상단 고정 영역 */}
+      <div className="shrink-0 space-y-4 pb-3">
+        {isAtLimit && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-5 py-3 text-sm text-destructive font-medium">
+            {'\u{B370}\u{C774}\u{D130} \u{D55C}\u{B3C4}(1,000\u{D589})\u{C5D0} \u{B3C4}\u{B2EC}\u{D588}\u{C2B5}\u{B2C8}\u{B2E4}. \u{C0C8} \u{B370}\u{C774}\u{D130}\u{B97C} \u{CD94}\u{AC00}\u{D558}\u{B824}\u{BA74} Pro\u{B85C} \u{C5C5}\u{ADF8}\u{B808}\u{C774}\u{B4DC}\u{D558}\u{C138}\u{C694}.'}
+          </div>
+        )}
+        {isNearLimit && !isAtLimit && (
+          <div className="rounded-xl border border-orange-200 bg-orange-50 px-5 py-3 text-sm text-orange-700 font-medium">
+            {'\u{B370}\u{C774}\u{D130}\u{AC00} '}{rowCount}{'\u{D589}\u{C785}\u{B2C8}\u{B2E4}. \u{BB34}\u{B8CC} \u{D50C}\u{B79C} \u{D55C}\u{B3C4}('}{ROW_LIMIT.toLocaleString()}{'\u{D589})\u{C5D0} \u{ADF8}\u{C811}\u{D588}\u{C2B5}\u{B2C8}\u{B2E4}.'}
+          </div>
+        )}
+
+        {/* 검색 영역 */}
+        <div className="bg-card border border-border rounded-xl px-5 py-4 shadow-sm">
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex items-center gap-5">
+              <div className="flex items-center gap-2 w-[186px]">
+                <label className="text-sm font-bold shrink-0 text-primary">{'\u{C0C1}\u{D488}\u{BA85}'}</label>
+                <Input className="h-8 text-xs" placeholder={'\u{C0C1}\u{D488}\u{BA85}'} value={filterProductName} onChange={(e) => setFilterProductName(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2 w-[168px]">
+                <label className="text-sm font-bold shrink-0 text-primary">{'\u{D310}\u{B9E4}\u{CC98}'}</label>
+                <Input className="h-8 text-xs" placeholder={'\u{D310}\u{B9E4}\u{CC98}'} value={filterMarketplace} onChange={(e) => setFilterMarketplace(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2 w-[350px]">
+                <label className="text-sm font-bold shrink-0 text-primary">{'\u{D310}\u{B9E4}\u{C77C}'}</label>
+                <div className="flex items-center gap-1">
+                  <Input className="h-8 text-xs" type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} />
+                  <span className="text-xs text-muted-foreground shrink-0">~</span>
+                  <Input className="h-8 text-xs" type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-[250px]">
+                <label className="text-sm font-bold shrink-0 text-primary">{'\u{D310}\u{B9E4}\u{AC00}'}</label>
+                <div className="flex items-center gap-1">
+                  <Input className="h-8 text-xs" type="number" placeholder={'\u{CD5C}\u{C18C}'} value={filterPriceMin} onChange={(e) => setFilterPriceMin(e.target.value)} />
+                  <span className="text-xs text-muted-foreground shrink-0">~</span>
+                  <Input className="h-8 text-xs" type="number" placeholder={'\u{CD5C}\u{B300}'} value={filterPriceMax} onChange={(e) => setFilterPriceMax(e.target.value)} />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button variant="outline" size="sm" className="font-bold flex items-center gap-1 h-8 text-xs px-3" onClick={handleReset}>
+                <span className="material-symbols-outlined text-base">refresh</span>
+                {'\u{CD08}\u{AE30}\u{D654}'}
+              </Button>
+              <Button size="sm" className="bg-primary text-primary-foreground font-bold flex items-center gap-1 shadow-lg shadow-primary/20 px-3 h-8 text-xs">
+                <span className="material-symbols-outlined text-base">search</span>
+                {'\u{C870}\u{D68C}'}
+              </Button>
+            </div>
+          </div>
         </div>
-      )}
-      {isNearLimit && !isAtLimit && (
-        <div className="rounded-md border border-orange-300 bg-orange-50 px-4 py-2 text-sm text-orange-700">
-          데이터가 {rowCount}행입니다. 무료 플랜 한도({ROW_LIMIT.toLocaleString()}행)에 근접했습니다.
+
+        {/* 그리드 헤더 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              {'\u{C804}\u{CCB4} '}<b className="text-foreground font-bold">{filteredRows.length}</b>{'\u{AC1C}'}
+              {selectedCount > 0 && (
+                <>{' \u{00B7} '}<b className="text-foreground font-bold">{selectedCount}</b>{'\u{AC1C} \u{C120}\u{D0DD}\u{B428}'}</>
+              )}
+              <span className="text-xs ml-1">{`(\u{CD5C}\u{B300} 1,000\u{AC1C})`}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            {actionButtons}
+          </div>
         </div>
-      )}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          총 {filteredRows.length}개
-          {Object.keys(rowSelection).length > 0 && ` · ${Object.keys(rowSelection).length}개 선택됨`}
-          {' '}(최대 1,000개)
-        </p>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="상품명, 판매처 검색..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="w-64"
-          />
-          <Button variant="outline" size="sm" onClick={() => setGlobalFilter(globalFilter)}>
-            검색
-          </Button>
-        </div>
-        <div />
       </div>
 
-      <div className="rounded-md border overflow-auto">
-        <table className="w-full text-sm table-fixed">
+      {/* 데이터 테이블 - 상하좌우 스크롤 */}
+      <div className="flex-1 min-h-0 bg-card border border-border rounded-xl overflow-auto shadow-sm">
+        <table className="w-full text-sm table-fixed min-w-[1000px]">
           <colgroup>
-            <col className="w-10" />
-            <col className="w-10" />
-            <col className="w-44" />
-            <col className="w-20" />
+            <col className="w-[38px]" />
+            <col className="w-[45px]" />
+            <col className="w-[166px]" />
+            <col className="w-[90px]" />
             <col className="w-24" />
             <col className="w-24" />
             <col className="w-16" />
@@ -413,45 +483,44 @@ export function SalesGrid({
             <col className="w-24" />
             <col className="w-24" />
           </colgroup>
-          <thead>
+          <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b bg-muted/50">
+              <tr key={headerGroup.id} className="bg-lavender border-b border-border">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-3 py-2 text-center font-medium cursor-pointer hover:bg-muted border-r border-slate-200/60 last:border-r-0"
+                    className="grid-divider px-4 py-3.5 text-center text-sm font-extrabold text-foreground tracking-wide cursor-pointer hover:bg-lavender transition-colors"
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
-                    {header.column.getIsSorted() === 'asc' ? ' ↑' : header.column.getIsSorted() === 'desc' ? ' ↓' : ''}
+                    {header.column.getIsSorted() === 'asc' ? ' \u{2191}' : header.column.getIsSorted() === 'desc' ? ' \u{2193}' : ''}
                   </th>
                 ))}
               </tr>
             ))}
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="py-12 text-center text-muted-foreground">
-                  데이터가 없습니다. 엑셀을 업로드해주세요.
+                <td colSpan={columns.length} className="py-16 text-center text-muted-foreground">
+                  <span className="material-symbols-outlined text-4xl mb-2 block opacity-30">table_rows</span>
+                  {'\u{B370}\u{C774}\u{D130}\u{AC00} \u{C5C6}\u{C2B5}\u{B2C8}\u{B2E4}. \u{C5D1}\u{C140}\u{C744} \u{C5C5}\u{B85C}\u{B4DC}\u{D574}\u{C8FC}\u{C138}\u{C694}.'}
                 </td>
               </tr>
             ) : (
-              filteredRows.map((row, idx) => (
+              filteredRows.map((row) => (
                 <tr
                   key={row.id}
                   className={[
-                    'border-b',
+                    'transition-colors',
                     row.original._edited
-                      ? 'bg-orange-50'
-                      : idx % 2 === 0
-                        ? 'bg-white'
-                        : 'bg-muted/20',
-                    'hover:bg-orange-50/40',
+                      ? 'bg-amber-50/80'
+                      : 'bg-card',
+                    'hover:bg-lavender/30',
                   ].join(' ')}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-3 py-2 border-r border-slate-100/80 last:border-r-0">
+                    <td key={cell.id} className="grid-divider px-4 py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -459,32 +528,41 @@ export function SalesGrid({
               ))
             )}
           </tbody>
-          <tfoot>
-            <tr className="border-t bg-muted/50 font-medium">
-              <td colSpan={6} className="px-3 py-2 text-right text-muted-foreground">합계</td>
-              <td className="px-3 py-2 text-right">{fmt(totalQty)}</td>
-              <td className="px-3 py-2 text-right">{fmt(totalUnitCost)}</td>
-              <td className="px-3 py-2 text-right">{fmt(totalFee1)}</td>
-              <td className="px-3 py-2 text-right">{fmt(totalFee2)}</td>
-              <td className="px-3 py-2 text-right">{fmt(totalFee3)}</td>
-              <td className="px-3 py-2 text-right">{fmt(totalAdCost)}</td>
-              <td className="px-3 py-2 text-right">{fmt(totalSales)}</td>
-              <td className="px-3 py-2 text-right">{fmt(totalMargin)}</td>
+          <tfoot className="sticky bottom-0 z-10">
+            <tr className="bg-lavender border-t-2 border-border">
+              <td colSpan={5} className="px-4 py-4" />
+              <td className="grid-divider px-4 py-4 text-right text-xs uppercase tracking-widest text-muted-foreground font-bold">{'\u{D569}\u{ACC4}'}</td>
+              <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalQty)}</td>
+              <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalUnitCost)}</td>
+              <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalFee1)}</td>
+              <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalFee2)}</td>
+              <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalFee3)}</td>
+              <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalAdCost)}</td>
+              <td className="grid-divider px-4 py-4 text-right text-sm font-bold text-primary">{fmt(totalSales)}</td>
+              <td className="px-4 py-4 text-right text-sm font-bold text-primary">{fmt(totalMargin)}</td>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <div className="flex justify-end gap-2">
+      {/* 하단 액션 바 - 공용 풋터 위 고정 */}
+      <div className="shrink-0 border-t border-border bg-card px-5 py-3 flex justify-end gap-3 mt-0 rounded-b-xl">
         <Button
-          variant="destructive"
+          variant="outline"
+          className="border-rose-200 text-rose-400 hover:bg-rose-50 hover:text-rose-500 font-bold flex items-center gap-2 shadow-sm"
           onClick={handleDelete}
-          disabled={Object.keys(rowSelection).length === 0 || deleting}
+          disabled={selectedCount === 0 || deleting}
         >
-          {deleting ? '삭제 중...' : `삭제${Object.keys(rowSelection).length > 0 ? ` (${Object.keys(rowSelection).length}건)` : ''}`}
+          <span className="material-symbols-outlined text-lg">delete</span>
+          {deleting ? '\u{C0AD}\u{C81C} \u{C911}...' : `\u{C0AD}\u{C81C}${selectedCount > 0 ? ` (${selectedCount}\u{AC74})` : ''}`}
         </Button>
-        <Button onClick={handleSave} disabled={pendingChanges.size === 0 || saving}>
-          {saving ? '저장 중...' : `저장${pendingChanges.size > 0 ? ` (${pendingChanges.size}건)` : ''}`}
+        <Button
+          className="bg-primary text-primary-foreground font-bold flex items-center gap-2 shadow-lg shadow-primary/20 px-8"
+          onClick={handleSave}
+          disabled={pendingChanges.size === 0 || saving}
+        >
+          <span className="material-symbols-outlined text-lg">save</span>
+          {saving ? '\u{C800}\u{C7A5} \u{C911}...' : `\u{C800}\u{C7A5}${pendingChanges.size > 0 ? ` (${pendingChanges.size}\u{AC74})` : ''}`}
         </Button>
       </div>
     </div>

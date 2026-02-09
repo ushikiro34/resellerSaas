@@ -120,10 +120,11 @@ export function ExcelUpload() {
       )}
       <Button
         variant="outline"
+        className="text-primary font-bold flex items-center gap-2 shadow-sm hover:bg-lavender"
         onClick={() => inputRef.current?.click()}
         disabled={loading}
       >
-        <Upload className="h-4 w-4 mr-2" />
+        <span className="material-symbols-outlined text-lg">upload_file</span>
         {loading ? '업로드 중...' : '엑셀 업로드'}
       </Button>
       <input

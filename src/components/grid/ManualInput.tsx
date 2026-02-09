@@ -79,8 +79,8 @@ export function ManualInput() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <PenLine className="h-4 w-4 mr-2" />
+        <Button variant="outline" className="text-primary font-bold flex items-center gap-2 shadow-sm hover:bg-lavender">
+          <span className="material-symbols-outlined text-lg">add_circle</span>
           직접 입력
         </Button>
       </DialogTrigger>
