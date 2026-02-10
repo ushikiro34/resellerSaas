@@ -8,7 +8,6 @@ import { TrendChart } from '@/components/dashboard/TrendChart'
 import { ChannelChart } from '@/components/dashboard/ChannelChart'
 import { CostPieChart } from '@/components/dashboard/CostPieChart'
 import { TopProductsChart } from '@/components/dashboard/TopProductsChart'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface RawRecord {
@@ -138,7 +137,11 @@ export default function DashboardPage() {
         query = query.gte('sold_at', fromDate)
       }
 
-      const { data: records } = await query
+      const { data: records, error } = await query
+
+      if (error) {
+        console.error('[Dashboard] Supabase error:', error)
+      }
 
       if (!records || records.length === 0) {
         setKpi(null)
@@ -175,17 +178,20 @@ export default function DashboardPage() {
   return (
     <div className="h-full overflow-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">대시보드</h1>
-        <div className="flex gap-1">
+        <h1 className="text-2xl font-bold tracking-tight">대시보드</h1>
+        <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
           {DATE_RANGE_OPTIONS.map((opt) => (
-            <Button
+            <button
               key={opt.value}
-              variant={dateRange === opt.value ? 'default' : 'outline'}
-              size="sm"
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                dateRange === opt.value
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'hover:bg-background'
+              }`}
               onClick={() => setDateRange(opt.value)}
             >
               {opt.label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
@@ -202,23 +208,56 @@ export default function DashboardPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <KpiCard title="총 매출" value={formatKRW(kpi.total_sales)} />
-            <KpiCard title="총 마진" value={formatKRW(kpi.total_margin)} sub={`마진율 ${kpi.avg_margin_rate}%`} />
-            <KpiCard title="총 수수료" value={formatKRW(kpi.total_fee)} />
-            <KpiCard title="총 판매수" value={kpi.total_quantity.toLocaleString('ko-KR') + '개'} />
+            <KpiCard
+              title="총 매출"
+              value={formatKRW(kpi.total_sales)}
+              icon="payments"
+              iconColor="text-primary"
+            />
+            <KpiCard
+              title="총 마진"
+              value={formatKRW(kpi.total_margin)}
+              sub={`마진율 ${kpi.avg_margin_rate}%`}
+              icon="savings"
+              iconColor="text-emerald-500"
+            />
+            <KpiCard
+              title="총 수수료"
+              value={formatKRW(kpi.total_fee)}
+              icon="receipt_long"
+              iconColor="text-red-400"
+            />
+            <KpiCard
+              title="총 판매수"
+              value={kpi.total_quantity.toLocaleString('ko-KR') + '개'}
+              icon="shopping_cart"
+              iconColor="text-amber-400"
+            />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <Card className="lg:col-span-7 rounded-2xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">매출 / 마진 추이</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium">매출 / 마진 추이</CardTitle>
+                  <div className="flex gap-4 text-xs font-medium">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-primary" />
+                      <span>매출</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                      <span>마진</span>
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <TrendChart data={trendData} onDrilldown={handleDateDrilldown} />
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="lg:col-span-5 rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">판매처별 매출</CardTitle>
               </CardHeader>
@@ -226,8 +265,10 @@ export default function DashboardPage() {
                 <ChannelChart data={channelData} onDrilldown={handleChannelDrilldown} />
               </CardContent>
             </Card>
+          </div>
 
-            <Card>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Card className="rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">비용 구조</CardTitle>
               </CardHeader>
@@ -236,7 +277,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">상품별 마진 TOP 5</CardTitle>
               </CardHeader>

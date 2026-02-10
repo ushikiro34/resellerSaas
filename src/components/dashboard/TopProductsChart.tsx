@@ -1,30 +1,37 @@
-'use client'
-
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
-
 interface ProductPoint {
   product: string
   margin: number
 }
 
 export function TopProductsChart({ data }: { data: ProductPoint[] }) {
+  const maxAbsMargin = data.length > 0 ? Math.max(...data.map((d) => Math.abs(d.margin))) : 1
+
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => (v / 10000).toFixed(0) + '만'} />
-        <YAxis type="category" dataKey="product" tick={{ fontSize: 11 }} width={90} />
-        <Tooltip formatter={(v: number) => v.toLocaleString('ko-KR') + '원'} />
-        <Bar dataKey="margin" name="마진" fill="#10b981" radius={[0, 4, 4, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="space-y-5 py-2">
+      {data.map((item, i) => {
+        const isNegative = item.margin < 0
+        return (
+          <div key={i} className="space-y-1.5">
+            <div className="flex justify-between text-xs font-medium">
+              <span className="truncate pr-4">{item.product}</span>
+              <span className={`shrink-0 ${isNegative ? 'text-[#f87171]' : ''}`}>
+                {item.margin.toLocaleString('ko-KR')}원
+              </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  isNegative ? 'bg-[#f87171]' : 'bg-[#06b6d4]'
+                }`}
+                style={{ width: `${Math.max((Math.abs(item.margin) / maxAbsMargin) * 100, 2)}%` }}
+              />
+            </div>
+          </div>
+        )
+      })}
+      {data.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-8">데이터 없음</p>
+      )}
+    </div>
   )
 }
