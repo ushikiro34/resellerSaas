@@ -197,13 +197,13 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
+        <div className="flex h-[calc(100vh-200px)] items-center justify-center">
           <p className="text-muted-foreground">불러오는 중...</p>
         </div>
       ) : empty ? (
-        <div className="flex flex-col items-center justify-center h-64 text-muted-foreground space-y-2">
-          <p className="text-lg">아직 데이터가 없습니다</p>
-          <p className="text-sm">판매 데이터 페이지에서 엑셀을 업로드해주세요</p>
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] space-y-1">
+          <p className="text-lg text-purple-800"><span className="font-bold">조회된 기간의</span> 데이터가 없습니다.</p>
+          <p className="text-lg text-purple-800">판매데이터를 확인해주세요.</p>
         </div>
       ) : (
         <>

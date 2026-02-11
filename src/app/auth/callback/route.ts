@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { encrypt } from '@/lib/crypto'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
         await supabaseAdmin
           .from('users')
           .update({
-            google_access_token: provider_token,
-            google_refresh_token: provider_refresh_token ?? null,
+            google_access_token: encrypt(provider_token),
+            google_refresh_token: provider_refresh_token ? encrypt(provider_refresh_token) : null,
             google_token_expires_at: expires_at
               ? new Date(expires_at * 1000).toISOString()
               : null,

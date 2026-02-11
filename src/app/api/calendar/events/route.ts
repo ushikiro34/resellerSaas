@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { encrypt, decrypt } from '@/lib/crypto'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,20 +55,36 @@ export async function POST(req: Request) {
     )
   }
 
-  let accessToken = userData.google_access_token
+  // Decrypt tokens from DB
+  const decryptedAccess = decrypt(userData.google_access_token)
+  if (!decryptedAccess) {
+    return Response.json(
+      { error: 'NO_GOOGLE_TOKEN', message: 'Google reconnection required' },
+      { status: 400 }
+    )
+  }
+
+  let accessToken = decryptedAccess
 
   // Check if token is expired and refresh if needed
   if (userData.google_token_expires_at) {
     const expiresAt = new Date(userData.google_token_expires_at)
     const now = new Date()
     if (now >= expiresAt && userData.google_refresh_token) {
-      const refreshed = await refreshGoogleToken(userData.google_refresh_token)
+      const decryptedRefresh = decrypt(userData.google_refresh_token)
+      if (!decryptedRefresh) {
+        return Response.json(
+          { error: 'TOKEN_REFRESH_FAILED', message: 'Google reconnection required' },
+          { status: 400 }
+        )
+      }
+      const refreshed = await refreshGoogleToken(decryptedRefresh)
       if (refreshed) {
         accessToken = refreshed.access_token
         await supabaseAdmin
           .from('users')
           .update({
-            google_access_token: refreshed.access_token,
+            google_access_token: encrypt(refreshed.access_token),
             google_token_expires_at: new Date(
               Date.now() + refreshed.expires_in * 1000
             ).toISOString(),
