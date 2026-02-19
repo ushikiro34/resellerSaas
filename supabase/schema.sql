@@ -79,6 +79,10 @@ create table public.sales_records (
     ) * quantity
   ) stored,
 
+  revenue_type text not null default 'product'
+    check (revenue_type in ('product', 'subscription', 'ads')),
+  region text not null default 'KR',
+
   input_type text check (input_type in ('excel', 'manual')),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -95,6 +99,10 @@ with check (auth.uid() = user_id);
 create index idx_sales_user_date on public.sales_records (user_id, sold_at);
 create index idx_sales_user_settlement on public.sales_records (user_id, settlement_due_at);
 create index idx_sales_user_marketplace on public.sales_records (user_id, marketplace);
+create index idx_sales_user_revenue_type on public.sales_records (user_id, revenue_type);
+create index idx_sales_user_region on public.sales_records (user_id, region);
+create index idx_sales_user_date_type on public.sales_records (user_id, sold_at, revenue_type);
+create index idx_sales_user_date_region on public.sales_records (user_id, sold_at, region);
 
 
 -- 4. dashboard_settings 테이블
@@ -155,7 +163,330 @@ before insert on public.uploads
 for each row execute function public.check_upload_limit();
 
 
--- 6. Dashboard Views
+-- 6. 구독 & 결제 테이블 (TossPayments)
+-- ============================================
+
+-- 구독 테이블
+create table public.subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  billing_key text not null,
+  customer_key text not null,
+  plan_type text not null check (plan_type in ('monthly', 'yearly')),
+  status text not null default 'active' check (status in ('active', 'cancelled', 'expired', 'past_due')),
+  amount integer not null,
+  next_billing_date timestamptz not null,
+  cancelled_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.subscriptions enable row level security;
+
+create policy "Users can view own subscriptions"
+on public.subscriptions for select
+using (auth.uid() = user_id);
+
+create unique index idx_subs_active_user
+  on public.subscriptions (user_id) where status = 'active';
+create index idx_subs_next_billing
+  on public.subscriptions (next_billing_date) where status = 'active';
+
+-- 결제 이력 테이블
+create table public.payments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  subscription_id uuid references public.subscriptions(id) on delete set null,
+  payment_key text,
+  order_id text not null unique,
+  amount integer not null,
+  status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'cancelled')),
+  paid_at timestamptz,
+  failure_reason text,
+  receipt_url text,
+  raw_response jsonb,
+  created_at timestamptz default now()
+);
+
+alter table public.payments enable row level security;
+
+create policy "Users can view own payments"
+on public.payments for select
+using (auth.uid() = user_id);
+
+create index idx_payments_user on public.payments (user_id, created_at desc);
+create index idx_payments_subscription on public.payments (subscription_id, created_at desc);
+
+
+-- 7. Revenue 집계 테이블
+-- ============================================
+
+-- 일별 집계
+create table public.revenue_daily (
+  user_id uuid not null references public.users(id) on delete cascade,
+  date date not null,
+  revenue_type text not null,
+  region text not null,
+  total_amount numeric(14,2) default 0,
+  primary key (user_id, date, revenue_type, region)
+);
+
+alter table public.revenue_daily enable row level security;
+create policy "Revenue daily isolation"
+on public.revenue_daily for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+-- 월별 집계
+create table public.revenue_monthly (
+  user_id uuid not null references public.users(id) on delete cascade,
+  year int not null,
+  month int not null,
+  revenue_type text not null,
+  region text not null,
+  total_amount numeric(14,2) default 0,
+  primary key (user_id, year, month, revenue_type, region)
+);
+
+alter table public.revenue_monthly enable row level security;
+create policy "Revenue monthly isolation"
+on public.revenue_monthly for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+-- 연별 집계
+create table public.revenue_yearly (
+  user_id uuid not null references public.users(id) on delete cascade,
+  year int not null,
+  revenue_type text not null,
+  region text not null,
+  total_amount numeric(14,2) default 0,
+  primary key (user_id, year, revenue_type, region)
+);
+
+alter table public.revenue_yearly enable row level security;
+create policy "Revenue yearly isolation"
+on public.revenue_yearly for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+-- 목표 테이블
+create table public.revenue_targets (
+  user_id uuid not null references public.users(id) on delete cascade,
+  year int not null,
+  month int not null,
+  revenue_type text not null,
+  region text not null,
+  target_amount numeric(14,2) default 0,
+  primary key (user_id, year, month, revenue_type, region)
+);
+
+alter table public.revenue_targets enable row level security;
+create policy "Revenue targets isolation"
+on public.revenue_targets for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+
+-- 7. Revenue 자동 집계 Trigger
+-- ============================================
+
+-- 일별/월별/연별 집계를 한 번에 처리하는 통합 트리거 함수
+create or replace function public.update_revenue_aggregates()
+returns trigger as $$
+declare
+  v_user_id uuid;
+  v_date date;
+  v_year int;
+  v_month int;
+  v_revenue_type text;
+  v_region text;
+  v_amount numeric;
+begin
+  -- DELETE인 경우 OLD 기준으로 차감
+  if (TG_OP = 'DELETE') then
+    v_user_id := OLD.user_id;
+    v_date := OLD.sold_at;
+    v_year := extract(year from OLD.sold_at);
+    v_month := extract(month from OLD.sold_at);
+    v_revenue_type := OLD.revenue_type;
+    v_region := OLD.region;
+    v_amount := -(OLD.sale_price * OLD.quantity);
+
+    -- daily
+    update public.revenue_daily
+    set total_amount = total_amount + v_amount
+    where user_id = v_user_id and date = v_date
+      and revenue_type = v_revenue_type and region = v_region;
+
+    -- monthly
+    update public.revenue_monthly
+    set total_amount = total_amount + v_amount
+    where user_id = v_user_id and year = v_year and month = v_month
+      and revenue_type = v_revenue_type and region = v_region;
+
+    -- yearly
+    update public.revenue_yearly
+    set total_amount = total_amount + v_amount
+    where user_id = v_user_id and year = v_year
+      and revenue_type = v_revenue_type and region = v_region;
+
+    return OLD;
+  end if;
+
+  -- UPDATE인 경우 OLD 차감 + NEW 가산
+  if (TG_OP = 'UPDATE') then
+    -- OLD 차감
+    v_user_id := OLD.user_id;
+    v_date := OLD.sold_at;
+    v_year := extract(year from OLD.sold_at);
+    v_month := extract(month from OLD.sold_at);
+    v_revenue_type := OLD.revenue_type;
+    v_region := OLD.region;
+    v_amount := -(OLD.sale_price * OLD.quantity);
+
+    update public.revenue_daily
+    set total_amount = total_amount + v_amount
+    where user_id = v_user_id and date = v_date
+      and revenue_type = v_revenue_type and region = v_region;
+
+    update public.revenue_monthly
+    set total_amount = total_amount + v_amount
+    where user_id = v_user_id and year = v_year and month = v_month
+      and revenue_type = v_revenue_type and region = v_region;
+
+    update public.revenue_yearly
+    set total_amount = total_amount + v_amount
+    where user_id = v_user_id and year = v_year
+      and revenue_type = v_revenue_type and region = v_region;
+  end if;
+
+  -- INSERT 또는 UPDATE의 NEW 가산
+  v_user_id := NEW.user_id;
+  v_date := NEW.sold_at;
+  v_year := extract(year from NEW.sold_at);
+  v_month := extract(month from NEW.sold_at);
+  v_revenue_type := NEW.revenue_type;
+  v_region := NEW.region;
+  v_amount := NEW.sale_price * NEW.quantity;
+
+  -- daily upsert
+  insert into public.revenue_daily(user_id, date, revenue_type, region, total_amount)
+  values (v_user_id, v_date, v_revenue_type, v_region, v_amount)
+  on conflict (user_id, date, revenue_type, region)
+  do update set total_amount = revenue_daily.total_amount + v_amount;
+
+  -- monthly upsert
+  insert into public.revenue_monthly(user_id, year, month, revenue_type, region, total_amount)
+  values (v_user_id, v_year, v_month, v_revenue_type, v_region, v_amount)
+  on conflict (user_id, year, month, revenue_type, region)
+  do update set total_amount = revenue_monthly.total_amount + v_amount;
+
+  -- yearly upsert
+  insert into public.revenue_yearly(user_id, year, revenue_type, region, total_amount)
+  values (v_user_id, v_year, v_revenue_type, v_region, v_amount)
+  on conflict (user_id, year, revenue_type, region)
+  do update set total_amount = revenue_yearly.total_amount + v_amount;
+
+  return NEW;
+end;
+$$ language plpgsql security definer;
+
+create trigger trg_revenue_aggregates
+after insert or update or delete on public.sales_records
+for each row execute function public.update_revenue_aggregates();
+
+-- 연별 재계산 함수 (배치 보정용)
+create or replace function public.recalculate_yearly_summary(p_user_id uuid)
+returns void as $$
+begin
+  delete from public.revenue_yearly where user_id = p_user_id;
+
+  insert into public.revenue_yearly (user_id, year, revenue_type, region, total_amount)
+  select user_id, year, revenue_type, region, sum(total_amount)
+  from public.revenue_monthly
+  where user_id = p_user_id
+  group by user_id, year, revenue_type, region;
+end;
+$$ language plpgsql security definer;
+
+
+-- 8. Revenue 분석 Views
+-- ============================================
+
+-- YoY 비교
+create view public.revenue_yoy
+with (security_invoker = true)
+as
+select
+  curr.user_id,
+  curr.year,
+  curr.revenue_type,
+  curr.region,
+  curr.total_amount as current_year,
+  coalesce(prev.total_amount, 0) as previous_year,
+  (curr.total_amount - coalesce(prev.total_amount, 0)) as yoy_diff,
+  round(
+    case
+      when coalesce(prev.total_amount, 0) = 0 then 0
+      else ((curr.total_amount - prev.total_amount) / prev.total_amount * 100)
+    end::numeric, 2
+  ) as yoy_percent
+from public.revenue_yearly curr
+left join public.revenue_yearly prev
+  on curr.user_id = prev.user_id
+  and curr.year = prev.year + 1
+  and curr.revenue_type = prev.revenue_type
+  and curr.region = prev.region;
+
+-- 목표 대비 달성률
+create view public.revenue_vs_target
+with (security_invoker = true)
+as
+select
+  m.user_id,
+  m.year,
+  m.month,
+  m.revenue_type,
+  m.region,
+  m.total_amount,
+  coalesce(t.target_amount, 0) as target_amount,
+  (m.total_amount - coalesce(t.target_amount, 0)) as diff,
+  round(
+    case
+      when coalesce(t.target_amount, 0) = 0 then 0
+      else ((m.total_amount / t.target_amount) * 100)
+    end::numeric, 2
+  ) as achievement_rate
+from public.revenue_monthly m
+left join public.revenue_targets t
+  on m.user_id = t.user_id
+  and m.year = t.year
+  and m.month = t.month
+  and m.revenue_type = t.revenue_type
+  and m.region = t.region;
+
+-- 워터폴 분석
+create view public.revenue_waterfall
+with (security_invoker = true)
+as
+select
+  curr.user_id,
+  curr.year,
+  curr.revenue_type,
+  curr.region,
+  coalesce(prev.total_amount, 0) as base_amount,
+  curr.total_amount as current_amount,
+  (curr.total_amount - coalesce(prev.total_amount, 0)) as growth_amount
+from public.revenue_yearly curr
+left join public.revenue_yearly prev
+  on curr.user_id = prev.user_id
+  and curr.year = prev.year + 1
+  and curr.revenue_type = prev.revenue_type
+  and curr.region = prev.region;
+
+
+-- 9. Dashboard Views (기존)
 -- ============================================
 -- KPI 카드
 create view vw_dashboard_kpi

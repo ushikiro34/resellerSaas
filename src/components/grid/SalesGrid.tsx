@@ -30,6 +30,8 @@ export interface SalesRecord {
   ad_cost: number
   gross_sales: number
   margin: number
+  revenue_type: string
+  region: string
   _edited?: boolean
 }
 
@@ -238,6 +240,17 @@ export function SalesGrid({
     columnHelper.accessor('marketplace', {
       header: '\u{D310}  \u{B9E4}  \u{CC98}',
       cell: (info) => <span className="block text-left">{info.getValue() ?? '-'}</span>,
+    }),
+    columnHelper.accessor('revenue_type', {
+      header: '\u{B9E4}\u{CD9C}\u{C720}\u{D615}',
+      cell: (info) => {
+        const labels: Record<string, string> = { product: '상품', subscription: '구독', ads: '광고' }
+        return <span className="block text-center">{labels[info.getValue()] ?? info.getValue()}</span>
+      },
+    }),
+    columnHelper.accessor('region', {
+      header: '\u{C9C0}  \u{C5ED}',
+      cell: (info) => <span className="block text-center">{info.getValue()}</span>,
     }),
     columnHelper.accessor('sold_at', {
       header: '\u{D310}  \u{B9E4}  \u{C77C}',
@@ -472,6 +485,8 @@ export function SalesGrid({
             <col className="w-[45px]" />
             <col className="w-[166px]" />
             <col className="w-[90px]" />
+            <col className="w-[76px]" />
+            <col className="w-[56px]" />
             <col className="w-24" />
             <col className="w-24" />
             <col className="w-16" />
@@ -530,7 +545,7 @@ export function SalesGrid({
           </tbody>
           <tfoot className="sticky bottom-0 z-10">
             <tr className="bg-lavender border-t-2 border-border">
-              <td colSpan={5} className="px-4 py-4" />
+              <td colSpan={7} className="px-4 py-4" />
               <td className="grid-divider px-4 py-4 text-right text-xs uppercase tracking-widest text-muted-foreground font-bold">{'\u{D569}\u{ACC4}'}</td>
               <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalQty)}</td>
               <td className="grid-divider px-4 py-4 text-right text-sm font-bold">{fmt(totalUnitCost)}</td>

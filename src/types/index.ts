@@ -1,3 +1,5 @@
+export type RevenueType = 'product' | 'subscription' | 'ads'
+
 export interface SalesRecord {
   id: string
   user_id: string
@@ -15,6 +17,8 @@ export interface SalesRecord {
   gross_sales: number
   total_fee: number
   margin: number
+  revenue_type: RevenueType
+  region: string
   created_at: string
   updated_at: string
 }

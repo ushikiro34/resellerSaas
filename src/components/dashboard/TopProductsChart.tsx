@@ -7,7 +7,7 @@ export function TopProductsChart({ data }: { data: ProductPoint[] }) {
   const maxAbsMargin = data.length > 0 ? Math.max(...data.map((d) => Math.abs(d.margin))) : 1
 
   return (
-    <div className="space-y-5 py-2">
+    <div className="space-y-3 py-1">
       {data.map((item, i) => {
         const isNegative = item.margin < 0
         return (
@@ -18,7 +18,7 @@ export function TopProductsChart({ data }: { data: ProductPoint[] }) {
                 {item.margin.toLocaleString('ko-KR')}원
               </span>
             </div>
-            <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
                   isNegative ? 'bg-[#f87171]' : 'bg-[#06b6d4]'

@@ -17,6 +17,8 @@ interface ExcelRow {
   fee_2?: number
   fee_3?: number
   ad_cost?: number
+  revenue_type?: string
+  region?: string
 }
 
 export function ExcelUpload() {
@@ -68,6 +70,7 @@ export function ExcelUpload() {
       }
 
       // sales_records 삽입
+      const validRevenueTypes = ['product', 'subscription', 'ads']
       const records = rows.map((row) => ({
         user_id: user.id,
         upload_id: upload.id,
@@ -81,6 +84,8 @@ export function ExcelUpload() {
         fee_2: Number(row.fee_2 ?? 0),
         fee_3: Number(row.fee_3 ?? 0),
         ad_cost: Number(row.ad_cost ?? 0),
+        revenue_type: validRevenueTypes.includes(row.revenue_type ?? '') ? row.revenue_type : 'product',
+        region: row.region ?? 'KR',
         input_type: 'excel',
       }))
 

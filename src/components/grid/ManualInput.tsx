@@ -14,6 +14,12 @@ import {
 } from '@/components/ui/dialog'
 import { PenLine } from 'lucide-react'
 
+const REVENUE_TYPE_OPTIONS = [
+  { value: 'product', label: '상품' },
+  { value: 'subscription', label: '구독' },
+  { value: 'ads', label: '광고' },
+] as const
+
 const defaultForm = {
   product_name: '',
   marketplace: '',
@@ -25,6 +31,8 @@ const defaultForm = {
   fee_2: '0',
   fee_3: '0',
   ad_cost: '0',
+  revenue_type: 'product',
+  region: 'KR',
 }
 
 export function ManualInput() {
@@ -33,7 +41,7 @@ export function ManualInput() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((prev) => ({ ...prev, [k]: e.target.value }))
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,6 +66,8 @@ export function ManualInput() {
       fee_2: Number(form.fee_2),
       fee_3: Number(form.fee_3),
       ad_cost: Number(form.ad_cost),
+      revenue_type: form.revenue_type,
+      region: form.region,
       input_type: 'manual',
     })
 
@@ -97,6 +107,22 @@ export function ManualInput() {
             <div className="space-y-1">
               <Label>판매처</Label>
               <Input value={form.marketplace} onChange={set('marketplace')} placeholder="무신사, 크림..." />
+            </div>
+            <div className="space-y-1">
+              <Label>매출 유형 *</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={form.revenue_type}
+                onChange={set('revenue_type')}
+              >
+                {REVENUE_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label>지역 *</Label>
+              <Input value={form.region} onChange={set('region')} placeholder="KR, US, JP..." required />
             </div>
             <div className="space-y-1">
               <Label>판매일 *</Label>

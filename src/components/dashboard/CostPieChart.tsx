@@ -17,16 +17,16 @@ export function CostPieChart({ data }: { data: CostSlice[] }) {
   const activeItem = activeIndex !== null ? data[activeIndex] : null
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center gap-8 py-4">
-      <div className="relative w-48 h-48">
+    <div className="flex flex-col md:flex-row items-center justify-center gap-6 py-2">
+      <div className="relative w-40 h-40">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={55}
-              outerRadius={80}
+              innerRadius={45}
+              outerRadius={68}
               dataKey="value"
               strokeWidth={0}
               onMouseEnter={(_, index) => setActiveIndex(index)}
@@ -66,7 +66,7 @@ export function CostPieChart({ data }: { data: CostSlice[] }) {
           )}
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-2">
         {data.map((item, i) => (
           <div
             key={i}

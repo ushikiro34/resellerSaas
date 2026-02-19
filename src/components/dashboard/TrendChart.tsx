@@ -24,7 +24,7 @@ export function TrendChart({
   onDrilldown?: (date: string) => void
 }) {
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={220}>
       <LineChart
         data={data}
         margin={{ top: 4, right: 16, left: 0, bottom: 0 }}

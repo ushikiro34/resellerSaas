@@ -154,7 +154,6 @@ function PrivacyContent() {
             <p className="font-medium">① 회원가입 및 서비스 이용 시</p>
             <ul className="list-disc ml-5 mt-1 space-y-1">
               <li>이메일 주소</li>
-              <li>비밀번호(암호화 저장)</li>
             </ul>
           </div>
           <div>
@@ -266,7 +265,6 @@ function PrivacyContent() {
         <p>회사는 다음과 같은 조치를 취하고 있습니다:</p>
         <ul className="list-disc ml-5 mt-1 space-y-1">
           <li>HTTPS 통신 암호화</li>
-          <li>비밀번호 암호화 저장</li>
           <li>접근 권한 최소화</li>
           <li>관리자 접근 통제</li>
         </ul>

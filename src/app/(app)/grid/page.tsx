@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { Suspense, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { SalesGrid, type SalesRecord } from '@/components/grid/SalesGrid'
 import { ExcelUpload } from '@/components/grid/ExcelUpload'
@@ -8,6 +8,14 @@ import { ManualInput } from '@/components/grid/ManualInput'
 import { Button } from '@/components/ui/button'
 
 export default function GridPage() {
+  return (
+    <Suspense fallback={<div className="flex h-full items-center justify-center"><p className="text-muted-foreground">불러오는 중...</p></div>}>
+      <GridContent />
+    </Suspense>
+  )
+}
+
+function GridContent() {
   const searchParams = useSearchParams()
   const channelFilter = searchParams.get('channel') ?? ''
   const dateFilter = searchParams.get('date') ?? ''

@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { usePlanInfo } from '@/lib/hooks/usePlanInfo'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Table2, LogOut } from 'lucide-react'
+import { LayoutDashboard, Table2, LogOut, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
+  { href: '/analytics', label: '매출 분석', icon: TrendingUp },
   { href: '/grid', label: '판매 데이터', icon: Table2 },
 ]
 
@@ -18,7 +19,13 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { plan, rowCount, uploadCount, ROW_LIMIT, UPLOAD_LIMIT, loading } = usePlanInfo()
-  const [upgrading, setUpgrading] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null)
+    })
+  }, [])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -28,28 +35,33 @@ export function Sidebar() {
   const rowPct = Math.min((rowCount / ROW_LIMIT) * 100, 100)
   const isNearLimit = plan === 'free' && rowCount >= ROW_LIMIT * 0.9
 
-  const handleUpgrade = async () => {
-    setUpgrading(true)
-    const { data: { user, session } } = await supabase.auth.getUser().then(async (u) => ({
-      data: { user: u.data.user, session: (await supabase.auth.getSession()).data.session }
-    }))
-    if (!user) { setUpgrading(false); return }
-
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, email: user.email }),
-    })
-    const { url } = await res.json()
-    if (url) window.location.href = url
-    setUpgrading(false)
-  }
-
   return (
     <aside className="flex h-screen w-56 flex-col border-r bg-background">
       <div className="flex h-14 items-center px-4 border-b">
         <span className="font-bold text-lg">리셀러 데이터</span>
       </div>
+
+      {userEmail && (
+        <Link
+          href="/mypage"
+          className={cn(
+            'flex items-center gap-3 mx-2 mt-2 p-3 rounded-xl border transition-colors',
+            pathname === '/mypage'
+              ? 'bg-primary/10 border-primary/20'
+              : 'bg-muted/50 border-transparent hover:bg-muted'
+          )}
+        >
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
+            {userEmail.charAt(0).toUpperCase()}
+          </div>
+          <div className="overflow-hidden">
+            <p className="text-xs font-semibold truncate">{userEmail}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              {plan === 'pro' ? 'Pro Plan' : 'Free Plan'}
+            </p>
+          </div>
+        </Link>
+      )}
 
       <nav className="flex-1 space-y-1 p-2">
         {navItems.map(({ href, label, icon: Icon }) => (
@@ -105,10 +117,9 @@ export function Sidebar() {
               <Button
                 size="sm"
                 className="w-full mt-1"
-                onClick={handleUpgrade}
-                disabled={upgrading}
+                asChild
               >
-                {upgrading ? '처리 중...' : '⚡ Pro 업그레이드'}
+                <Link href="/pricing">Pro 업그레이드</Link>
               </Button>
             </>
           )}

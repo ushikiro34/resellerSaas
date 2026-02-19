@@ -176,7 +176,7 @@ export default function DashboardPage() {
   }, [router])
 
   return (
-    <div className="h-full overflow-auto p-6 space-y-6">
+    <div className="h-full overflow-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">대시보드</h1>
         <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
