@@ -6,8 +6,14 @@ import { supabase } from '@/lib/supabase/client'
 import { usePlanInfo } from '@/lib/hooks/usePlanInfo'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Check, Info, Sparkles, ArrowLeft } from 'lucide-react'
+import { Check, Info, Sparkles, ArrowLeft, AlertCircle } from 'lucide-react'
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 const FREE_FEATURES = [
   { text: '데이터 최대 1,000행', included: true },
@@ -31,10 +37,11 @@ export default function PricingPage() {
   const { plan, loading: planLoading } = usePlanInfo()
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('yearly')
   const [upgrading, setUpgrading] = useState(false)
+  const [yearlyConfirmOpen, setYearlyConfirmOpen] = useState(false)
 
   const price = billing === 'yearly' ? YEARLY_PRICE : MONTHLY_PRICE
 
-  const handleUpgrade = async () => {
+  const proceedToPayment = async () => {
     setUpgrading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -54,6 +61,14 @@ export default function PricingPage() {
       console.error('TossPayments error:', err)
     }
     setUpgrading(false)
+  }
+
+  const handleUpgrade = () => {
+    if (billing === 'yearly') {
+      setYearlyConfirmOpen(true)
+    } else {
+      proceedToPayment()
+    }
   }
 
   return (
@@ -209,6 +224,43 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* 연간 결제 확인 모달 */}
+      <Dialog open={yearlyConfirmOpen} onOpenChange={setYearlyConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>연간 결제 확인</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+              <div className="text-sm leading-relaxed">
+                <p className="font-semibold text-amber-700 dark:text-amber-400 mb-2">연간 구독을 결제하시겠습니까?</p>
+                <p className="text-muted-foreground">
+                  결제 금액: <span className="font-bold text-foreground">&#8361; {(YEARLY_PRICE * 12).toLocaleString()}</span> (12개월)
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  월 &#8361; {YEARLY_PRICE.toLocaleString()} × 12개월, 월간 대비 20% 할인이 적용된 금액입니다.
+                </p>
+                <p className="text-muted-foreground mt-2 text-xs">
+                  결제 후 서비스 미사용 시 전액 환불이 가능합니다.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setYearlyConfirmOpen(false)}>취소</Button>
+              <Button
+                onClick={() => {
+                  setYearlyConfirmOpen(false)
+                  proceedToPayment()
+                }}
+              >
+                결제 진행
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

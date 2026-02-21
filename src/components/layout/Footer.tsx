@@ -64,11 +64,31 @@ function TermsContent() {
       <section>
         <h4 className="font-bold mb-1">제6조 (요금 및 결제)</h4>
         <ul className="list-disc ml-5 mt-1 space-y-1">
-          <li>Pro 플랜은 월 구독 방식으로 제공됩니다.</li>
-          <li>결제는 Stripe 등 제3의 결제대행사를 통해 이루어집니다.</li>
-          <li>구독은 이용자가 해지하지 않는 한 자동 갱신됩니다.</li>
-          <li>이용자는 언제든지 구독을 해지할 수 있습니다.</li>
-          <li>환불 정책은 결제일 기준 미사용 기간에 대해 관련 법령 및 회사 정책에 따릅니다.</li>
+          <li>Pro 플랜은 월간 또는 연간 정기결제(자동결제) 방식으로 제공됩니다.</li>
+          <li>결제는 토스페이먼츠(TossPayments) 결제대행사를 통해 이루어집니다.</li>
+          <li>구독은 이용자가 해지하지 않는 한 동일 조건으로 자동 갱신됩니다.</li>
+          <li>자동 갱신 시 등록된 결제 수단으로 요금이 자동 청구됩니다.</li>
+          <li>이용자는 언제든지 구독을 해지할 수 있으며, 해지 시 이미 결제된 기간이 종료될 때까지 Pro 기능을 이용할 수 있습니다.</li>
+          <li>환불 정책은 별도의 &quot;환불정책&quot;에 따릅니다.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h4 className="font-bold mb-1">제6조의2 (자동 갱신 고지)</h4>
+        <ul className="list-disc ml-5 mt-1 space-y-1">
+          <li>회사는 정기결제 갱신일 전에 이용자에게 결제 예정 사실을 이메일로 안내합니다. (월간 구독: 7일 전, 연간 구독: 15일 전)</li>
+          <li>요금 변경이 있는 경우, 변경 적용일 30일 전까지 이용자에게 고지합니다.</li>
+          <li>이용자는 갱신일 전까지 구독을 해지하여 다음 결제를 방지할 수 있습니다.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h4 className="font-bold mb-1">제6조의3 (청약철회)</h4>
+        <ul className="list-disc ml-5 mt-1 space-y-1">
+          <li>이용자는 결제일로부터 7일 이내에 청약철회를 요청할 수 있습니다. (전자상거래 등에서의 소비자보호에 관한 법률 제17조)</li>
+          <li>단, 결제 이후 서비스를 실질적으로 이용한 경우(데이터 업로드, 수정, 삭제 등)에는 청약철회가 제한될 수 있습니다.</li>
+          <li>청약철회가 승인된 경우 결제 금액 전액이 환불되며, 3~5 영업일 이내에 처리됩니다.</li>
+          <li>청약철회 요청은 마이페이지 또는 고객센터(ushikiro34@gmail.com)를 통해 가능합니다.</li>
         </ul>
       </section>
 
@@ -127,8 +147,9 @@ function TermsContent() {
         <h4 className="font-bold mb-1">제12조 (계약 해지)</h4>
         <ul className="list-disc ml-5 mt-1 space-y-1">
           <li>이용자는 언제든지 회원 탈퇴 및 구독 해지를 할 수 있습니다.</li>
-          <li>구독 해지 시 다음 결제일부터 과금이 중단됩니다.</li>
-          <li>해지 후 Free 플랜 제한이 적용될 수 있습니다.</li>
+          <li>구독 해지 시 이미 결제된 기간이 종료될 때까지 Pro 기능을 이용할 수 있으며, 다음 결제일부터 과금이 중단됩니다.</li>
+          <li>해지 후 Free 플랜 전환 시 데이터 저장 행 수 1,000건 제한, 업로드 횟수 10회 제한이 적용됩니다.</li>
+          <li>제한 초과 데이터는 삭제되지 않으나, 추가 입력 및 일부 기능이 제한됩니다.</li>
         </ul>
       </section>
 
@@ -162,7 +183,7 @@ function PrivacyContent() {
               <li>이메일</li>
               <li>결제 상태 정보</li>
             </ul>
-            <p className="mt-1 text-xs text-muted-foreground">※ 카드 정보는 Stripe를 통해 처리되며 회사는 직접 저장하지 않습니다.</p>
+            <p className="mt-1 text-xs text-muted-foreground">※ 카드 정보는 토스페이먼츠를 통해 처리되며 회사는 직접 저장하지 않습니다.</p>
           </div>
           <div>
             <p className="font-medium">③ 서비스 이용 과정에서 자동 수집</p>
@@ -224,7 +245,7 @@ function PrivacyContent() {
         <p>회사는 원활한 서비스 제공을 위해 다음과 같이 업무를 위탁할 수 있습니다.</p>
         <ul className="list-disc ml-5 mt-1 space-y-1">
           <li>Supabase: 데이터 저장 및 인증 처리</li>
-          <li>Stripe: 결제 처리</li>
+          <li>토스페이먼츠(TossPayments): 결제 처리</li>
           <li>Vercel(또는 클라우드 사업자): 서버 운영</li>
         </ul>
         <p className="mt-1">위탁 업체는 관련 법령에 따라 개인정보를 안전하게 처리합니다.</p>
@@ -235,7 +256,7 @@ function PrivacyContent() {
         <p>서비스 운영 과정에서 개인정보가 국외 서버에 저장될 수 있습니다.</p>
         <ul className="list-disc ml-5 mt-1 space-y-1">
           <li>Supabase 서버 위치: (예: 싱가포르 / 미국 등 실제 위치 기재)</li>
-          <li>Stripe 서버 위치: 미국</li>
+          <li>토스페이먼츠 서버 위치: 대한민국</li>
         </ul>
         <p className="mt-1">회사는 관련 법령에 따라 안전하게 관리합니다.</p>
       </section>
@@ -291,34 +312,42 @@ function RefundContent() {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <p className="text-xs text-muted-foreground">시행일자: 2026년 3월 1일</p>
-      <p>Reseller Data 는 월 구독 기반 서비스입니다. 환불은 아래 기준에 따릅니다.</p>
+      <p>Reseller Data 는 월간/연간 구독 기반 서비스입니다. 환불은 아래 기준에 따릅니다.</p>
 
       <section>
         <h4 className="font-bold mb-1">1. 기본 원칙</h4>
         <ul className="list-disc ml-5 mt-1 space-y-1">
-          <li>Pro 플랜은 월 단위 자동결제 방식입니다.</li>
+          <li>Pro 플랜은 월간 또는 연간 자동결제(정기결제) 방식입니다.</li>
           <li>이용자는 언제든지 구독을 해지할 수 있습니다.</li>
-          <li>해지 시 다음 결제일부터 과금이 중단됩니다.</li>
+          <li>해지 시 이미 결제된 기간이 종료될 때까지 Pro 기능을 이용할 수 있으며, 다음 결제일부터 과금이 중단됩니다.</li>
         </ul>
       </section>
 
       <section>
-        <h4 className="font-bold mb-1">2. 일반 환불 기준</h4>
+        <h4 className="font-bold mb-1">2. 청약철회 (7일 이내 환불)</h4>
+        <ul className="list-disc ml-5 mt-1 space-y-1">
+          <li>전자상거래 등에서의 소비자보호에 관한 법률 제17조에 따라, 결제일로부터 7일 이내에 청약철회를 요청할 수 있습니다.</li>
+          <li>단, 결제 이후 서비스를 실질적으로 이용한 경우(데이터 업로드, 데이터 수정, 삭제 등)에는 청약철회가 제한될 수 있습니다.</li>
+          <li>청약철회 시 결제 금액 전액이 환불됩니다.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h4 className="font-bold mb-1">3. 일반 환불 기준</h4>
         <div className="ml-2 space-y-2">
           <div>
-            <p className="font-medium">① 결제 직후 (당일)</p>
+            <p className="font-medium">① 결제 후 서비스 미사용</p>
             <ul className="list-disc ml-5 mt-1 space-y-1">
-              <li>결제일 포함 24시간 이내</li>
-              <li>서비스 사용 이력이 없는 경우</li>
+              <li>결제일 이후 데이터 변화(업로드, 수정, 삭제)가 전혀 없는 경우</li>
             </ul>
             <p className="mt-1">→ 전액 환불 가능</p>
           </div>
           <div>
-            <p className="font-medium">② 결제 후 일부 사용한 경우</p>
+            <p className="font-medium">② 결제 후 서비스를 사용한 경우</p>
             <ul className="list-disc ml-5 mt-1 space-y-1">
-              <li>이미 데이터를 입력·분석한 경우</li>
+              <li>이미 데이터를 입력·수정·삭제한 경우</li>
             </ul>
-            <p className="mt-1">→ 원칙적으로 환불 불가</p>
+            <p className="mt-1">→ 원칙적으로 환불 불가, 잔여 기간까지 Pro 기능 유지</p>
           </div>
           <div>
             <p className="font-medium">③ 중복 결제 / 시스템 오류</p>
@@ -331,16 +360,25 @@ function RefundContent() {
       </section>
 
       <section>
-        <h4 className="font-bold mb-1">3. Free → Pro 전환 후 다운그레이드</h4>
+        <h4 className="font-bold mb-1">4. 연간 구독 해지</h4>
         <ul className="list-disc ml-5 mt-1 space-y-1">
-          <li>환불 대신 구독 해지 처리</li>
-          <li>이미 결제된 기간은 사용 가능</li>
-          <li>남은 기간에 대한 부분 환불은 원칙적으로 제공하지 않음</li>
+          <li>연간 구독 해지 시, 이미 결제된 기간이 종료될 때까지 Pro 기능을 이용할 수 있습니다.</li>
+          <li>서비스 미사용(데이터 변화 없음) 시 전액 환불이 가능합니다.</li>
+          <li>서비스 이용 이력이 있는 경우 남은 기간에 대한 부분 환불은 원칙적으로 제공하지 않습니다.</li>
         </ul>
       </section>
 
       <section>
-        <h4 className="font-bold mb-1">4. 예외 환불</h4>
+        <h4 className="font-bold mb-1">5. Free → Pro 전환 후 다운그레이드</h4>
+        <ul className="list-disc ml-5 mt-1 space-y-1">
+          <li>환불 대신 구독 해지 처리</li>
+          <li>이미 결제된 기간은 Pro 기능 사용 가능</li>
+          <li>서비스 미사용 시 전액 환불 가능</li>
+        </ul>
+      </section>
+
+      <section>
+        <h4 className="font-bold mb-1">6. 예외 환불</h4>
         <p>다음 경우 회사는 재량으로 환불을 제공할 수 있습니다:</p>
         <ul className="list-disc ml-5 mt-1 space-y-1">
           <li>명백한 시스템 오류</li>
@@ -350,17 +388,17 @@ function RefundContent() {
       </section>
 
       <section>
-        <h4 className="font-bold mb-1">5. 환불 요청 방법</h4>
+        <h4 className="font-bold mb-1">7. 환불 요청 방법</h4>
         <ul className="list-disc ml-5 mt-1 space-y-1">
-          <li>고객센터 이메일: support@도메인</li>
+          <li>고객센터 이메일: ushikiro34@gmail.com</li>
           <li>결제일, 계정 이메일, 사유 기재</li>
           <li>영업일 기준 3~5일 이내 처리</li>
         </ul>
       </section>
 
       <section>
-        <h4 className="font-bold mb-1">6. 결제 대행사 정책</h4>
-        <p>실제 환불 처리 및 카드 취소는 결제대행사(Stripe) 정책에 따릅니다.</p>
+        <h4 className="font-bold mb-1">8. 결제 대행사 정책</h4>
+        <p>실제 환불 처리 및 카드 취소는 결제대행사(토스페이먼츠) 정책에 따릅니다.</p>
       </section>
     </div>
   )

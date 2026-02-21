@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { User, Zap, Settings, AlertTriangle } from 'lucide-react'
+import { User, Zap, Settings, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
 interface UserInfo {
   id: string
@@ -118,21 +118,30 @@ export default function MyPage() {
     router.push('/login')
   }
 
+  const [refundResult, setRefundResult] = useState<{ refunded: boolean; amount?: number; message?: string } | null>(null)
+
   const handleCancelSubscription = async () => {
     setCancelLoading(true)
     try {
       const res = await fetch('/api/toss/cancel', { method: 'POST' })
       const data = await res.json()
       if (data.success) {
-        setSubStatus('cancelled')
-        if (data.activeUntil) {
-          setPeriodEndDate(new Date(data.activeUntil).toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          }))
-        }
         setCancelModalOpen(false)
+        if (data.refunded) {
+          // 환불 처리됨 → 즉시 free 전환
+          setRefundResult({ refunded: true, amount: data.refundAmount, message: data.message })
+          setSubStatus(null)
+        } else {
+          // 일반 해지 → 잔여 기간 Pro 유지
+          setSubStatus('cancelled')
+          if (data.activeUntil) {
+            setPeriodEndDate(new Date(data.activeUntil).toLocaleDateString('ko-KR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }))
+          }
+        }
       }
     } catch {
       // 에러 처리
@@ -401,6 +410,34 @@ export default function MyPage() {
               >
                 {cancelLoading ? '처리 중...' : '구독 해지하기'}
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 환불 완료 모달 */}
+      <Dialog open={refundResult !== null} onOpenChange={() => setRefundResult(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{refundResult?.refunded ? '환불 완료' : '구독 해지 완료'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {refundResult?.refunded ? (
+              <div className="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
+                <div className="text-sm leading-relaxed">
+                  <p className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">전액 환불 처리되었습니다</p>
+                  <p className="text-muted-foreground">
+                    {refundResult.amount && <>환불 금액: &#8361; {refundResult.amount.toLocaleString()}<br /></>}
+                    서비스 미사용으로 결제 금액이 환불됩니다. 환불은 3~5 영업일 이내에 처리됩니다.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{refundResult?.message}</p>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={() => { setRefundResult(null); window.location.reload() }}>확인</Button>
             </div>
           </div>
         </DialogContent>
