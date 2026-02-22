@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { User, Zap, Settings, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { User, Zap, Settings, AlertTriangle, CheckCircle2, UserX } from 'lucide-react'
 
 interface UserInfo {
   id: string
@@ -120,6 +120,10 @@ export default function MyPage() {
 
   const [refundResult, setRefundResult] = useState<{ refunded: boolean; amount?: number; message?: string } | null>(null)
 
+  // 회원탈퇴
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
   const handleCancelSubscription = async () => {
     setCancelLoading(true)
     try {
@@ -147,6 +151,21 @@ export default function MyPage() {
       // 에러 처리
     }
     setCancelLoading(false)
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true)
+    try {
+      const res = await fetch('/api/auth/delete', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        await supabase.auth.signOut()
+        router.push('/login')
+      }
+    } catch {
+      // 에러 처리
+    }
+    setDeleteLoading(false)
   }
 
   if (loading) {
@@ -335,6 +354,17 @@ export default function MyPage() {
               로그아웃
             </Button>
           </div>
+          <div className="mt-6 pt-6 border-t border-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              <UserX className="w-4 h-4 mr-1.5" />
+              회원탈퇴
+            </Button>
+          </div>
         </section>
       </div>
 
@@ -438,6 +468,54 @@ export default function MyPage() {
             )}
             <div className="flex justify-end">
               <Button onClick={() => { setRefundResult(null); window.location.reload() }}>확인</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 회원탈퇴 확인 모달 */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>회원탈퇴</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+              <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+              <div className="text-sm leading-relaxed">
+                {subStatus === 'active' ? (
+                  <>
+                    <p className="font-semibold text-destructive mb-1">현재 Pro 플랜 구독 중입니다.</p>
+                    <p className="text-muted-foreground">
+                      탈퇴 시 구독이 즉시 해지되며, 모든 데이터가 영구 삭제됩니다.
+                    </p>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      삭제 항목: 판매 기록, 업로드 내역, 구독/결제 정보, 계정 설정
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold text-destructive mb-1">정말 탈퇴하시겠습니까?</p>
+                    <p className="text-muted-foreground">
+                      탈퇴 시 모든 데이터가 영구 삭제됩니다.
+                    </p>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      삭제 항목: 판매 기록, 업로드 내역, 계정 설정
+                    </p>
+                  </>
+                )}
+                <p className="text-destructive font-medium mt-2 text-xs">이 작업은 되돌릴 수 없습니다.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>취소</Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? '처리 중...' : '탈퇴하기'}
+              </Button>
             </div>
           </div>
         </DialogContent>

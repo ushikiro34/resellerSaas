@@ -35,14 +35,14 @@ export function Sidebar() {
   const isNearLimit = plan === 'free' && rowCount >= ROW_LIMIT * 0.9
 
   return (
-    <aside className="relative flex h-screen w-56 flex-col bg-[#13112b] border-r border-white/5 overflow-hidden">
+    <aside className="relative flex h-screen w-56 shrink-0 flex-col bg-[#13112b] border-r border-white/5 overflow-hidden">
       {/* 하단 글로우 효과 */}
       <div className="absolute -bottom-16 -left-8 w-40 h-40 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
 
       {/* 로고 */}
-      <div className="flex h-14 items-center gap-2 px-4 border-b border-white/10">
-        <div className="w-2 h-2 rounded-full bg-indigo-400" />
-        <span className="font-bold text-lg text-white">리셀러 데이터</span>
+      <div className="flex h-14 items-center px-3 border-b border-white/10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png?v=2" alt="Sheet2Dash" className="h-9 w-auto object-contain" />
       </div>
 
       {/* 유저 프로필 */}

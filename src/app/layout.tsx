@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "리셀러 데이터",
-  description: "리셀러 판매 데이터 관리 서비스",
+  title: "Sheet2Dash",
+  description: "Sheet2Dash - 판매 데이터 관리 서비스",
 };
 
 export default function RootLayout({

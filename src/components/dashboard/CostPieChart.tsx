@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 
 interface CostSlice {
   name: string
   value: number
 }
 
-const COLORS = ['#7c3aed', '#a78bfa', '#c4b5fd', '#ddd6fe']
+const DEFAULT_COLORS = ['#7c3aed', '#a78bfa', '#c4b5fd', '#ddd6fe']
 
-export function CostPieChart({ data }: { data: CostSlice[] }) {
+export function CostPieChart({ data, colors }: { data: CostSlice[]; colors?: string[] }) {
+  const palette = colors ?? DEFAULT_COLORS
   const total = data.reduce((s, d) => s + d.value, 0)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
@@ -35,7 +36,7 @@ export function CostPieChart({ data }: { data: CostSlice[] }) {
               {data.map((_, i) => (
                 <Cell
                   key={i}
-                  fill={COLORS[i % COLORS.length]}
+                  fill={palette[i % palette.length]}
                   style={{
                     transform: activeIndex === i ? 'scale(1.05)' : 'scale(1)',
                     transformOrigin: 'center',
@@ -79,7 +80,7 @@ export function CostPieChart({ data }: { data: CostSlice[] }) {
             <div className="flex items-center gap-2">
               <span
                 className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                style={{ backgroundColor: palette[i % palette.length] }}
               />
               <span className="text-sm font-medium">{item.name}</span>
             </div>

@@ -20,8 +20,9 @@ export interface YoYPoint {
   yoy_percent: number
 }
 
-export function YoYChart({ data }: { data: YoYPoint[] }) {
-  // revenue_type별로 그룹핑하여 연도별 비교
+export function YoYChart({ data, colors }: { data: YoYPoint[]; colors?: { primary: string; tertiary: string } }) {
+  const c = { primary: colors?.primary ?? '#7c3aed', tertiary: colors?.tertiary ?? '#c4b5fd' }
+
   const grouped = data.reduce<Record<number, { year: number; current: number; previous: number; yoy_percent: number }>>((acc, d) => {
     if (!acc[d.year]) {
       acc[d.year] = { year: d.year, current: 0, previous: 0, yoy_percent: 0 }
@@ -56,10 +57,10 @@ export function YoYChart({ data }: { data: YoYPoint[] }) {
           ]}
           labelFormatter={(label) => `${label}년`}
         />
-        <Bar dataKey="previous" name="전년" fill="#c4b5fd" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="current" name="당년" fill="#7c3aed" radius={[4, 4, 0, 0]}>
+        <Bar dataKey="previous" name="전년" fill={c.tertiary} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="current" name="당년" fill={c.primary} radius={[4, 4, 0, 0]}>
           {chartData.map((entry, i) => (
-            <Cell key={i} fill={entry.yoy_percent >= 0 ? '#7c3aed' : '#ef4444'} />
+            <Cell key={i} fill={entry.yoy_percent >= 0 ? c.primary : '#ef4444'} />
           ))}
         </Bar>
       </BarChart>

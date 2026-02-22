@@ -19,10 +19,13 @@ interface ChannelPoint {
 export function ChannelChart({
   data,
   onDrilldown,
+  colors,
 }: {
   data: ChannelPoint[]
   onDrilldown?: (channel: string) => void
+  colors?: { primary: string; secondary: string }
 }) {
+  const c = { primary: colors?.primary ?? '#7c3aed', secondary: colors?.secondary ?? '#06b6d4' }
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart
@@ -40,8 +43,8 @@ export function ChannelChart({
         <XAxis dataKey="channel" tick={{ fontSize: 11 }} />
         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v / 10000).toFixed(0) + '만'} />
         <Tooltip formatter={(v) => Number(v).toLocaleString('ko-KR') + '원'} />
-        <Bar dataKey="sales" name="매출" fill="#7c3aed" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="margin" name="마진" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="sales" name="매출" fill={c.primary} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="margin" name="마진" fill={c.secondary} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )

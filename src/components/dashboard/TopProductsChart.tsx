@@ -3,7 +3,8 @@ interface ProductPoint {
   margin: number
 }
 
-export function TopProductsChart({ data }: { data: ProductPoint[] }) {
+export function TopProductsChart({ data, colors }: { data: ProductPoint[]; colors?: { positive: string } }) {
+  const positiveColor = colors?.positive ?? '#06b6d4'
   const maxAbsMargin = data.length > 0 ? Math.max(...data.map((d) => Math.abs(d.margin))) : 1
 
   return (
@@ -20,10 +21,11 @@ export function TopProductsChart({ data }: { data: ProductPoint[] }) {
             </div>
             <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-700 ${
-                  isNegative ? 'bg-[#f87171]' : 'bg-[#06b6d4]'
-                }`}
-                style={{ width: `${Math.max((Math.abs(item.margin) / maxAbsMargin) * 100, 2)}%` }}
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${Math.max((Math.abs(item.margin) / maxAbsMargin) * 100, 2)}%`,
+                  backgroundColor: isNegative ? '#f87171' : positiveColor,
+                }}
               />
             </div>
           </div>

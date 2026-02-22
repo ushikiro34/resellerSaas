@@ -8,7 +8,9 @@ import { YoYChart, type YoYPoint } from '@/components/dashboard/YoYChart'
 import { TargetGaugeChart, type TargetData } from '@/components/dashboard/TargetGaugeChart'
 import { WaterfallChart, type WaterfallPoint } from '@/components/dashboard/WaterfallChart'
 import { RevenueKpiCards } from '@/components/dashboard/RevenueKpiCards'
+import { ChartColorDialog } from '@/components/dashboard/ChartColorDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useChartColors } from '@/lib/hooks/useChartColors'
 
 interface RawRecord {
   sold_at: string
@@ -88,6 +90,8 @@ function computeQuarterly(records: RawRecord[]) {
 }
 
 export default function AnalyticsPage() {
+  const { colors, setColors } = useChartColors('analytics')
+  const [colorDialogOpen, setColorDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [quarterlyData, setQuarterlyData] = useState<QuarterlyPoint[]>([])
   const [quarterlyChange, setQuarterlyChange] = useState<QuarterlyChangeData | null>(null)
@@ -173,7 +177,25 @@ export default function AnalyticsPage() {
 
   return (
     <div className="h-full overflow-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">매출 분석</h1>
+      <ChartColorDialog
+        page="analytics"
+        open={colorDialogOpen}
+        onOpenChange={setColorDialogOpen}
+        colors={colors}
+        onApply={setColors}
+      />
+
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-bold tracking-tight">매출 분석</h1>
+        <button
+          onClick={() => setColorDialogOpen(true)}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-muted transition-colors group"
+          title="차트 색상 설정"
+        >
+          <span className="material-symbols-outlined text-lg text-primary">palette</span>
+          <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">색상변경</span>
+        </button>
+      </div>
 
       {empty ? (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] space-y-1">
@@ -191,24 +213,24 @@ export default function AnalyticsPage() {
                 <QuarterlyChangeCards data={quarterlyChange} />
               )}
 
-              <Card className="rounded-2xl">
-                <CardHeader className="pb-2">
+              <Card className="rounded-2xl border border-border/60 shadow-sm">
+                <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium">분기별 매출 / 마진 추이</CardTitle>
+                    <CardTitle className="text-sm font-bold">분기별 매출 / 마진 추이</CardTitle>
                     <div className="flex gap-4 text-xs font-medium">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-primary" />
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.primary }} />
                         <span>매출</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-cyan-500" />
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.secondary }} />
                         <span>마진</span>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <QuarterlyComparisonChart data={quarterlyData} />
+                  <QuarterlyComparisonChart data={quarterlyData} colors={colors} />
                 </CardContent>
               </Card>
             </div>
@@ -222,30 +244,30 @@ export default function AnalyticsPage() {
               <RevenueKpiCards data={yoyData} year={waterfallYear} />
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <Card className="rounded-2xl">
-                  <CardHeader className="pb-2">
+                <Card className="rounded-2xl border border-border/60 shadow-sm">
+                  <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium">연간 매출 비교 (YoY)</CardTitle>
+                      <CardTitle className="text-sm font-bold">연간 매출 비교 (YoY)</CardTitle>
                       <div className="flex gap-4 text-xs font-medium">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#c4b5fd' }} />
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.tertiary }} />
                           <span>전년</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="w-3 h-3 rounded-full bg-primary" />
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.primary }} />
                           <span>당년</span>
                         </div>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <YoYChart data={yoyData} />
+                    <YoYChart data={yoyData} colors={{ primary: colors.primary, tertiary: colors.tertiary }} />
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">목표 대비 달성률</CardTitle>
+                <Card className="rounded-2xl border border-border/60 shadow-sm">
+                  <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
+                    <CardTitle className="text-sm font-bold">목표 대비 달성률</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <TargetGaugeChart data={targetData} />
@@ -253,10 +275,10 @@ export default function AnalyticsPage() {
                 </Card>
               </div>
 
-              <Card className="rounded-2xl">
-                <CardHeader className="pb-2">
+              <Card className="rounded-2xl border border-border/60 shadow-sm">
+                <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium">매출 성장 워터폴 ({waterfallYear}년)</CardTitle>
+                    <CardTitle className="text-sm font-bold">매출 성장 워터폴 ({waterfallYear}년)</CardTitle>
                     <div className="flex gap-4 text-xs font-medium">
                       <div className="flex items-center gap-1.5">
                         <span className="w-3 h-3 rounded-full bg-primary" />

@@ -8,7 +8,9 @@ import { TrendChart } from '@/components/dashboard/TrendChart'
 import { ChannelChart } from '@/components/dashboard/ChannelChart'
 import { CostPieChart } from '@/components/dashboard/CostPieChart'
 import { TopProductsChart } from '@/components/dashboard/TopProductsChart'
+import { ChartColorDialog } from '@/components/dashboard/ChartColorDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useChartColors, getPieColors } from '@/lib/hooks/useChartColors'
 
 interface RawRecord {
   product_name: string
@@ -116,6 +118,8 @@ function computeAll(records: RawRecord[]) {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { colors, setColors } = useChartColors('dashboard')
+  const [colorDialogOpen, setColorDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState<DateRange>('30D')
   const [kpi, setKpi] = useState<KpiData | null>(null)
@@ -177,8 +181,26 @@ export default function DashboardPage() {
 
   return (
     <div className="h-full overflow-auto p-4 space-y-4">
+      <ChartColorDialog
+        page="dashboard"
+        open={colorDialogOpen}
+        onOpenChange={setColorDialogOpen}
+        colors={colors}
+        onApply={setColors}
+      />
+
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">대시보드</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">대시보드</h1>
+          <button
+            onClick={() => setColorDialogOpen(true)}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-muted transition-colors group"
+            title="차트 색상 설정"
+          >
+            <span className="material-symbols-outlined text-lg text-primary">palette</span>
+            <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">색상변경</span>
+          </button>
+        </div>
         <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
           {DATE_RANGE_OPTIONS.map((opt) => (
             <button
@@ -236,53 +258,53 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <Card className="lg:col-span-7 rounded-2xl">
-              <CardHeader className="pb-2 bg-muted/40 rounded-t-2xl border-b border-border/50">
+            <Card className="lg:col-span-7 rounded-2xl border border-border/60 shadow-sm">
+              <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-bold">매출 / 마진 추이</CardTitle>
                   <div className="flex gap-4 text-xs font-medium">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-full bg-primary" />
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.primary }} />
                       <span>매출</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.secondary }} />
                       <span>마진</span>
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <TrendChart data={trendData} onDrilldown={handleDateDrilldown} />
+                <TrendChart data={trendData} onDrilldown={handleDateDrilldown} colors={colors} />
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-5 rounded-2xl">
-              <CardHeader className="pb-2 bg-muted/40 rounded-t-2xl border-b border-border/50">
+            <Card className="lg:col-span-5 rounded-2xl border border-border/60 shadow-sm">
+              <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
                 <CardTitle className="text-sm font-bold">판매처별 매출</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChannelChart data={channelData} onDrilldown={handleChannelDrilldown} />
+                <ChannelChart data={channelData} onDrilldown={handleChannelDrilldown} colors={colors} />
               </CardContent>
             </Card>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card className="rounded-2xl">
-              <CardHeader className="pb-2 bg-muted/40 rounded-t-2xl border-b border-border/50">
+            <Card className="rounded-2xl border border-border/60 shadow-sm">
+              <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
                 <CardTitle className="text-sm font-bold">비용 구조</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
-                <CostPieChart data={costData} />
+                <CostPieChart data={costData} colors={getPieColors(colors.primary)} />
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl">
-              <CardHeader className="pb-2 bg-muted/40 rounded-t-2xl border-b border-border/50">
+            <Card className="rounded-2xl border border-border/60 shadow-sm">
+              <CardHeader className="px-5 py-3 bg-muted/50 rounded-t-2xl border-b border-border">
                 <CardTitle className="text-sm font-bold">상품별 마진 TOP 5</CardTitle>
               </CardHeader>
               <CardContent>
-                <TopProductsChart data={topProducts} />
+                <TopProductsChart data={topProducts} colors={{ positive: colors.secondary }} />
               </CardContent>
             </Card>
           </div>

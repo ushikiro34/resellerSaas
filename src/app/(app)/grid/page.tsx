@@ -65,9 +65,8 @@ function GridContent() {
     <div className="flex flex-col h-full">
       <div className="shrink-0 px-8 pt-8 pb-4">
         <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-2">판매 데이터</h2>
-            <p className="text-muted-foreground text-base">리셀러 판매 기록을 조회하고 관리하는 화면입니다.</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">판매 데이터</h1>
           </div>
           <div className="flex items-center gap-3">
             {calendarStatus && (

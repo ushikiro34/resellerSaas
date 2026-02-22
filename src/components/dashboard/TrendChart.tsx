@@ -19,10 +19,13 @@ interface TrendPoint {
 export function TrendChart({
   data,
   onDrilldown,
+  colors,
 }: {
   data: TrendPoint[]
   onDrilldown?: (date: string) => void
+  colors?: { primary: string; secondary: string }
 }) {
+  const c = { primary: colors?.primary ?? '#7c3aed', secondary: colors?.secondary ?? '#06b6d4' }
   return (
     <ResponsiveContainer width="100%" height={220}>
       <LineChart
@@ -40,8 +43,8 @@ export function TrendChart({
         <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v / 10000).toFixed(0) + '만'} />
         <Tooltip formatter={(v) => Number(v).toLocaleString('ko-KR') + '원'} />
-        <Line type="monotone" dataKey="sales" name="매출" stroke="#7c3aed" strokeWidth={3} dot={false} />
-        <Line type="monotone" dataKey="margin" name="마진" stroke="#06b6d4" strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="sales" name="매출" stroke={c.primary} strokeWidth={3} dot={false} />
+        <Line type="monotone" dataKey="margin" name="마진" stroke={c.secondary} strokeWidth={3} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   )

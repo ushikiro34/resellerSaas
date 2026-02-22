@@ -13,7 +13,7 @@ function TermsContent() {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <p className="text-xs text-muted-foreground">시행일자: 2026년 3월 1일</p>
-      <p>본 이용약관(이하 &quot;약관&quot;)은 [회사명] (이하 &quot;회사&quot;)가 제공하는 Reseller Data 서비스(이하 &quot;서비스&quot;)의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+      <p>본 이용약관(이하 &quot;약관&quot;)은 [로건개발] (이하 &quot;회사&quot;)가 제공하는 Sheet2Dash 서비스(이하 &quot;서비스&quot;)의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
 
       <section>
         <h4 className="font-bold mb-1">제1조 (목적)</h4>
@@ -165,7 +165,7 @@ function PrivacyContent() {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <p className="text-xs text-muted-foreground">시행일자: 2026년 3월 1일</p>
-      <p>[회사명] (이하 &quot;회사&quot;)는 개인정보보호법 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하기 위하여 다음과 같이 개인정보처리방침을 수립·공개합니다.</p>
+      <p>[Sheet2Dash] (이하 &quot;회사&quot;)는 개인정보보호법 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하기 위하여 다음과 같이 개인정보처리방침을 수립·공개합니다.</p>
 
       <section>
         <h4 className="font-bold mb-1">1. 수집하는 개인정보 항목</h4>
@@ -412,7 +412,7 @@ export function Footer() {
   return (
     <>
       <footer className="shrink-0 border-t border-border bg-lavender/40 px-6 py-3 flex items-center justify-between text-xs text-muted-foreground">
-        <span>&copy; {new Date().getFullYear()} 리셀러 데이터. All rights reserved.</span>
+        <span>&copy; {new Date().getFullYear()} Sheet2Dash. All rights reserved.</span>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setTermsOpen(true)}
@@ -441,7 +441,7 @@ export function Footer() {
         <DialogContent className="max-w-[700px] max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>이용약관</DialogTitle>
-            <DialogDescription className="sr-only">리셀러 데이터 서비스 이용약관</DialogDescription>
+            <DialogDescription className="sr-only">Sheet2Dash 서비스 이용약관</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 pr-2">
             <TermsContent />
@@ -453,7 +453,7 @@ export function Footer() {
         <DialogContent className="max-w-[700px] max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>개인정보처리방침</DialogTitle>
-            <DialogDescription className="sr-only">리셀러 데이터 개인정보처리방침</DialogDescription>
+            <DialogDescription className="sr-only">Sheet2Dash 개인정보처리방침</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 pr-2">
             <PrivacyContent />
@@ -464,7 +464,7 @@ export function Footer() {
         <DialogContent className="max-w-[700px] max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>환불정책</DialogTitle>
-            <DialogDescription className="sr-only">리셀러 데이터 환불정책</DialogDescription>
+            <DialogDescription className="sr-only">Sheet2Dash 환불정책</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 pr-2">
             <RefundContent />
